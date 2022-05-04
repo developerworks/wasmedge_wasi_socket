@@ -15,7 +15,7 @@ fn handle_http(req: Request<String>) -> Result<Response<String>> {
 }
 
 fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
-    println!("received request from: {:?}", stream.peer_addr());
+    println!("received request from: {:?}", stream.peer_addr()?);
     // 缓冲区 1K
     let mut buff = [0u8; 1024];
     // 请求数据
