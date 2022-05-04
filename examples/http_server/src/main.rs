@@ -28,7 +28,7 @@ fn handle_http(req: Request<String>) -> Result<Response<String>> {
         StatusCode::new(200)?,
         ReasonPhrase::new("")?,
         serde_json::to_string(&api_result)
-            .unwrap_or_else(|_| r#"{"code":-1, "data":"Json serialize error"}"#.to_string()),
+            .unwrap_or_else(|_| r#"{"code":-1,"data":"Json serialize error"}"#.to_string()),
     );
 
     // 设置响应头
@@ -99,6 +99,7 @@ fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
     };
 
     let write_buf = resp.to_string();
+
     // 响应流
     // Write response data to peer socket
     let _ = stream.write(write_buf.as_bytes())?;
