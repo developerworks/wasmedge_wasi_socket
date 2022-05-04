@@ -16,22 +16,33 @@ fn handle_http(req: Request<String>) -> Result<Response<String>> {
 
 fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
     println!("received request from: {:?}", stream.peer_addr()?);
+    
     // 缓冲区 1K
+    // Create a buffer, size of 1024 bytes for receive bytes stream
     let mut buff = [0u8; 1024];
+    
     // 请求数据
+    // Create a buffer for store request bytes
     let mut data = Vec::new();
+    
     // 循环读取所有请求数据
+    // Read all bytes from stream to request data
     loop {
         let n = stream.read(&mut buff)?;
         data.extend_from_slice(&buff[0..n]);
-        // 如果当次读取字节数小于缓冲区大小, 说明数据读完了
+        // 如果当次读取字节数小于缓冲区大小, 说明数据读完了.
+        // If read bytes < 1024, bytes in stream read finished
         if n < 1024 {
             break;
         }
     }
+
     // 创建解码器
+    // Create a http decoder to parse bytes data to text request
     let mut decoder = RequestDecoder::<BodyDecoder<Utf8Decoder>>::default();
-    // 解码为请求对象
+    
+    // HTTP 从字节数组构造 HTTP 请求对象   
+    // Parse bytes data to a response (echo)
     let req = match decoder.decode_from_bytes(data.as_slice()) {
         Ok(req) => {
             println!("method: {}", req.method());
@@ -43,8 +54,9 @@ fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
         Err(e) => Err(e),
     };
     // 构造应答
-    let r = match req {
-        Ok(r) => r,
+    // Build a response
+    let resp = match req {
+        Ok(resp) => resp,
         Err(e) => {
             let err = format!("{:?}", e);
             Response::new(
@@ -56,8 +68,9 @@ fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
         }
     };
 
-    let write_buf = r.to_string();
+    let write_buf = resp.to_string();
     // 响应流
+    // Write response data to peer socket
     let _ = stream.write(write_buf.as_bytes())?;
     let _ = stream.write(b"\n")?;
     stream.shutdown(Shutdown::Both)?;
@@ -66,8 +79,11 @@ fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
 
 fn main() -> std::io::Result<()> {
     // 默认端口
+    // Default listen port
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
-    // println!("Server listening on {}", port);
+
+    // 系统调用: 通过 FFI 调用底层套接字
+    // System call: call libc ffi by syscall macro
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port), false)?;
     println!("Server is listening on: http://{}:{}", listener.address.ip(), listener.port);
 
