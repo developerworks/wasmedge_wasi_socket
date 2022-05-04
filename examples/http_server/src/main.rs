@@ -69,6 +69,9 @@ fn main() -> std::io::Result<()> {
     println!("Server listening on {}", port);
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port), false)?;
     loop {
-        let _ = handle_client(listener.accept(false)?.0);
+        let stream = listener.accept(false)?.0;
+        let addr = stream.local_addr()?;
+        println!("Server is listening on: {:?}", addr);
+        let _ = handle_client(stream);
     }
 }
