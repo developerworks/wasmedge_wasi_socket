@@ -121,7 +121,7 @@ impl TcpListener {
             }
         }
 
-        return Err(last_error);
+        Err(last_error)
     }
 
     /// Accept incoming connections with given file descriptor flags.
@@ -182,7 +182,7 @@ impl UdpSocket {
             }
         }
 
-        return Err(last_error);
+        Err(last_error)
     }
     pub fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         self.s.recv_from(buf)
@@ -210,8 +210,8 @@ pub fn nslookup(node: &str, service: &str) -> std::io::Result<Vec<SocketAddr>> {
     let mut sockbuffs = Vec::new();
     let mut ai_canonnames = Vec::new();
     let addrinfos = WasiAddrinfo::get_addrinfo(
-        &node,
-        &service,
+        node,
+        service,
         &hints,
         10,
         &mut sockaddrs,
@@ -237,8 +237,8 @@ pub fn nslookup(node: &str, service: &str) -> std::io::Result<Vec<SocketAddr>> {
                 SocketAddr::V4(SocketAddrV4::new(ip, port))
             }
             socket::AddressFamily::Inet6 => {
-                // unimplemented!("not support IPv6")
-                continue;
+                unimplemented!("not support IPv6")
+                // continue;
             }
         };
 

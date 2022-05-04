@@ -544,21 +544,19 @@ impl Socket {
             let res = sock_getlocaladdr(fd as u32, &mut addr, &mut addr_type, &mut port);
             if res != 0 {
                 Err(io::Error::from_raw_os_error(res as i32))
+            } else if addr_type == 4 {
+                let ip_addr = Ipv4Addr::new(addr_buf[0], addr_buf[1], addr_buf[2], addr_buf[3]);
+                Ok(SocketAddr::V4(SocketAddrV4::new(ip_addr, port as u16)))
+            } else if addr_type == 6 {
+                let ip_addr = Ipv6Addr::from(addr_buf);
+                Ok(SocketAddr::V6(SocketAddrV6::new(
+                    ip_addr,
+                    port as u16,
+                    0,
+                    0,
+                )))
             } else {
-                if addr_type == 4 {
-                    let ip_addr = Ipv4Addr::new(addr_buf[0], addr_buf[1], addr_buf[2], addr_buf[3]);
-                    Ok(SocketAddr::V4(SocketAddrV4::new(ip_addr, port as u16)))
-                } else if addr_type == 6 {
-                    let ip_addr = Ipv6Addr::from(addr_buf);
-                    Ok(SocketAddr::V6(SocketAddrV6::new(
-                        ip_addr,
-                        port as u16,
-                        0,
-                        0,
-                    )))
-                } else {
-                    Err(io::Error::from(io::ErrorKind::Unsupported))
-                }
+                Err(io::Error::from(io::ErrorKind::Unsupported))
             }
         }
     }
@@ -576,21 +574,19 @@ impl Socket {
             let res = sock_getpeeraddr(fd as u32, &mut addr, &mut addr_type, &mut port);
             if res != 0 {
                 Err(io::Error::from_raw_os_error(res as i32))
+            } else if addr_type == 4 {
+                let ip_addr = Ipv4Addr::new(addr_buf[0], addr_buf[1], addr_buf[2], addr_buf[3]);
+                Ok(SocketAddr::V4(SocketAddrV4::new(ip_addr, port as u16)))
+            } else if addr_type == 6 {
+                let ip_addr = Ipv6Addr::from(addr_buf);
+                Ok(SocketAddr::V6(SocketAddrV6::new(
+                    ip_addr,
+                    port as u16,
+                    0,
+                    0,
+                )))
             } else {
-                if addr_type == 4 {
-                    let ip_addr = Ipv4Addr::new(addr_buf[0], addr_buf[1], addr_buf[2], addr_buf[3]);
-                    Ok(SocketAddr::V4(SocketAddrV4::new(ip_addr, port as u16)))
-                } else if addr_type == 6 {
-                    let ip_addr = Ipv6Addr::from(addr_buf);
-                    Ok(SocketAddr::V6(SocketAddrV6::new(
-                        ip_addr,
-                        port as u16,
-                        0,
-                        0,
-                    )))
-                } else {
-                    Err(io::Error::from(io::ErrorKind::Unsupported))
-                }
+                Err(io::Error::from(io::ErrorKind::Unsupported))
             }
         }
     }

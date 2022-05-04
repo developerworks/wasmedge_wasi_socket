@@ -1,10 +1,10 @@
 use httparse::{Response, EMPTY_HEADER};
 use std::io::{self, Read, Write};
 use std::str::from_utf8;
-use wasmedge_wasi_socket::{TcpStream,nslookup};
+use wasmedge_wasi_socket::{nslookup, TcpStream};
 
 fn main() {
-    let addrs = nslookup("httpbin.org","http").unwrap();
+    let addrs = nslookup("httpbin.org", "http").unwrap();
     assert!(!addrs.is_empty());
 
     let addr = addrs[0];
