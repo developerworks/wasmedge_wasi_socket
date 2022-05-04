@@ -15,6 +15,7 @@ fn handle_http(req: Request<String>) -> Result<Response<String>> {
 }
 
 fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
+    println!("received request from: {:?}", stream.peer_addr());
     // 缓冲区 1K
     let mut buff = [0u8; 1024];
     // 请求数据
@@ -66,12 +67,12 @@ fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
 fn main() -> std::io::Result<()> {
     // 默认端口
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
-    println!("Server listening on {}", port);
+    // println!("Server listening on {}", port);
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port), false)?;
+    println!("Server is listening on: http://{}:{}", listener.address.ip(), listener.port);
+
     loop {
-        let stream = listener.accept(false)?.0;
-        let addr = stream.local_addr()?;
-        println!("Server is listening on: {:?}", addr);
+        let stream = listener.accept(false)?.0;        
         let _ = handle_client(stream);
     }
 }
