@@ -1,6 +1,7 @@
 use bytecodec::{bytes::Utf8Decoder, DecodeExt, Result};
 use httpcodec::{
-    BodyDecoder, HttpVersion, ReasonPhrase, Request, RequestDecoder, Response, StatusCode,
+    BodyDecoder, HeaderField, HttpVersion, ReasonPhrase, Request, RequestDecoder, Response,
+    StatusCode,
 };
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
@@ -13,17 +14,28 @@ struct ApiResult {
 }
 
 fn handle_http(req: Request<String>) -> Result<Response<String>> {
+    // Api 结果结构体
+    // Api result struct
     let api_result = ApiResult {
         code: 0,
         data: req.body().to_string(),
     };
 
-    Ok(Response::new(
+    // 构造响应
+    // Build response 
+    let mut resp = Response::new(
         HttpVersion::V1_0,
         StatusCode::new(200)?,
         ReasonPhrase::new("")?,
         serde_json::to_string(&api_result).unwrap_or_else(|_| "Serde serialize error".to_string()),
-    ))
+    );
+
+    // 设置响应头
+    // Set response header
+    let header = HeaderField::new("Content-Type", "application/json");
+    resp.header_mut().add_field(header?);
+    
+    Ok(resp)
 }
 
 fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
