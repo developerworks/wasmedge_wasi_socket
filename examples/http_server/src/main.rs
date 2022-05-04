@@ -22,19 +22,20 @@ fn handle_http(req: Request<String>) -> Result<Response<String>> {
     };
 
     // 构造响应
-    // Build response 
+    // Build response
     let mut resp = Response::new(
         HttpVersion::V1_0,
         StatusCode::new(200)?,
         ReasonPhrase::new("")?,
-        serde_json::to_string(&api_result).unwrap_or_else(|_| "Serde serialize error".to_string()),
+        serde_json::to_string(&api_result)
+            .unwrap_or_else(|_| r#"{"code":-1, "data":"Json serialize error"}"#.to_string()),
     );
 
     // 设置响应头
     // Set response header
     let header = HeaderField::new("Content-Type", "application/json");
     resp.header_mut().add_field(header?);
-    
+
     Ok(resp)
 }
 
