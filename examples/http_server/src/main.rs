@@ -4,6 +4,13 @@ use httpcodec::{
 };
 use std::io::{Read, Write};
 use wasmedge_wasi_socket::{Shutdown, TcpListener, TcpStream};
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ApiResult {
+    code: i32,
+    data: String
+}
 
 fn handle_http(req: Request<String>) -> Result<Response<String>> {
     Ok(Response::new(
@@ -59,11 +66,16 @@ fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
         Ok(resp) => resp,
         Err(e) => {
             let err = format!("{:?}", e);
+
+            let api_result = ApiResult {
+                code: -1,
+                data: err.clone()
+            };
             Response::new(
                 HttpVersion::V1_0,
                 StatusCode::new(500).unwrap(),
                 ReasonPhrase::new(err.as_str()).unwrap(),
-                err.clone(),
+                serde_json::to_string(&api_result)?,
             )
         }
     };
