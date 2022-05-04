@@ -2,36 +2,41 @@ use bytecodec::{bytes::Utf8Decoder, DecodeExt, Result};
 use httpcodec::{
     BodyDecoder, HttpVersion, ReasonPhrase, Request, RequestDecoder, Response, StatusCode,
 };
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use wasmedge_wasi_socket::{Shutdown, TcpListener, TcpStream};
-use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 struct ApiResult {
     code: i32,
-    data: String
+    data: String,
 }
 
 fn handle_http(req: Request<String>) -> Result<Response<String>> {
+    let api_result = ApiResult {
+        code: 0,
+        data: req.body().to_string(),
+    };
+
     Ok(Response::new(
         HttpVersion::V1_0,
         StatusCode::new(200)?,
         ReasonPhrase::new("")?,
-        format!("echo: {}", req.body()),
+        serde_json::to_string(&api_result).unwrap_or_else(|_| "Serde serialize error".to_string()),
     ))
 }
 
 fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
     println!("received request from: {:?}", stream.peer_addr()?);
-    
+
     // 缓冲区 1K
     // Create a buffer, size of 1024 bytes for receive bytes stream
     let mut buff = [0u8; 1024];
-    
+
     // 请求数据
     // Create a buffer for store request bytes
     let mut data = Vec::new();
-    
+
     // 循环读取所有请求数据
     // Read all bytes from stream to request data
     loop {
@@ -47,29 +52,29 @@ fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
     // 创建解码器
     // Create a http decoder to parse bytes data to text request
     let mut decoder = RequestDecoder::<BodyDecoder<Utf8Decoder>>::default();
-    
-    // HTTP 从字节数组构造 HTTP 请求对象   
+
+    // HTTP 从字节数组构造 HTTP 请求对象
     // Parse bytes data to a response (echo)
-    let req = match decoder.decode_from_bytes(data.as_slice()) {
+    let result = match decoder.decode_from_bytes(data.as_slice()) {
         Ok(req) => {
             println!("method: {}", req.method());
             println!("request target: {}", req.request_target());
             println!("http_version: {}", req.http_version());
             println!("header: {}", req.header());
             handle_http(req)
-        },
+        }
         Err(e) => Err(e),
     };
     // 构造应答
     // Build a response
-    let resp = match req {
+    let resp = match result {
         Ok(resp) => resp,
         Err(e) => {
             let err = format!("{:?}", e);
 
             let api_result = ApiResult {
                 code: -1,
-                data: err.clone()
+                data: err.clone(),
             };
             Response::new(
                 HttpVersion::V1_0,
@@ -97,10 +102,14 @@ fn main() -> std::io::Result<()> {
     // 系统调用: 通过 FFI 调用底层套接字
     // System call: call libc ffi by syscall macro
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port), false)?;
-    println!("Server is listening on: http://{}:{}", listener.address.ip(), listener.port);
+    println!(
+        "Server is listening on: http://{}:{}",
+        listener.address.ip(),
+        listener.port
+    );
 
     loop {
-        let stream = listener.accept(false)?.0;        
+        let stream = listener.accept(false)?.0;
         let _ = handle_client(stream);
     }
 }
